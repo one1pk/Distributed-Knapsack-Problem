@@ -1,8 +1,8 @@
-
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <vector>
 
 #define DEFAULT_N          4
@@ -75,17 +75,32 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    ifstream input_file;
-    input_file.open(argv[1], ios::in);
+    // cxxopts::Options options(
+    //   "page_rank_pull",
+    //   "Calculate page_rank using serial and parallel execution");
+    // options.add_options(
+    //   "",
+    //   {
+    //       {"nThreads", "Number of Threads",
+    //        cxxopts::value<uint>()->default_value(DEFAULT_NUMBER_OF_THREADS)},
+    //       {"nIterations", "Maximum number of iterations",
+    //        cxxopts::value<uint>()->default_value(DEFAULT_MAX_ITER)},
+    //       {"inputFile", "Input of values and weights",
+    //        cxxopts::value<std::string>()->default_value(
+    //            "/inputs/input.in")},
+    //   }
+    // );
 
-    // decide format of input files and extract data accordingly
+    // auto cl_options = options.parse(argc, argv);
+    // uint n_threads = cl_options["nThreads"].as<uint>();
+    // uint max_iterations = cl_options["nIterations"].as<uint>();
+    // std::string input_file_path = cl_options["inputFile"].as<string>();
 
     vector<int> weights, values;
     int num_items, capacity;
-    num_items = weights.size();
     capacity = DEFAULT_MAX_WEIGHT;
-
-    input_file.close();
+    
+    
 
     printf("Starting knapsack solving...\n"); 
 
