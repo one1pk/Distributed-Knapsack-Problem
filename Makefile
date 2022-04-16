@@ -1,11 +1,11 @@
 #compiler setup
 CXX = g++
 MPICXX = mpic++
-CXXFLAGS = -std=c++14 -O3 $(MACRO)
+CXXFLAGS = -std=c++14 -O3 -pthread $(MACRO)
 
 COMMON= core/utils.h core/cxxopts.h core/get_time.h 
 SERIAL= knapsack-serial
-#PARALLEL= curve_area_parallel heat_transfer_parallel
+PARALLEL= knapsack-parallel
 ALL= $(SERIAL) $(PARALLEL)
 
 all : $(ALL)
