@@ -6,8 +6,8 @@ CXXFLAGS = -std=c++14 -O3 -pthread
 COMMON= core/utils.h core/cxxopts.h core/get_time.h core/problemInput.h
 SERIAL= knapsack_serial
 PROBLEM_GENERATOR = knapsack_generator
-
-ALL= $(SERIAL) $(PROBLEM_GENERATOR)
+PARALLEL= knapsack-parallel
+ALL= $(SERIAL) $(PROBLEM_GENERATOR) $(PARALLEL)
 
 all : $(ALL)
 
