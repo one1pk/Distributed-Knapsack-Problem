@@ -46,7 +46,7 @@ void parallel_part(vector<vector<int>> dp, int start, int end) {
                 dp[i][j] = 0; // initial condition
             }
             else {
-                int* choices = new int[2]; 
+                int* choices = new int[2](); 
                 // 1st choice: Don't add item i to knapsack 
                 choices[0] = dp[i + 1][j]; // resuse optimal solution of i+1
                 if(j >= s[i]) {
