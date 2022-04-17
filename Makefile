@@ -1,22 +1,28 @@
 #compiler setup
 CXX = g++
 MPICXX = mpic++
-CXXFLAGS = -std=c++14 -O3 $(MACRO)
+CXXFLAGS = -std=c++14 -O3 -pthread
 
-COMMON= core/utils.h core/cxxopts.h core/get_time.h 
-SERIAL= knapsack-serial
-#PARALLEL= curve_area_parallel heat_transfer_parallel
-ALL= $(SERIAL) $(PARALLEL)
+COMMON= core/utils.h core/cxxopts.h core/get_time.h core/problemInput.h
+SERIAL= knapsack_serial
+PROBLEM_GENERATOR = knapsack_generator
+
+ALL= $(SERIAL) $(PROBLEM_GENERATOR)
 
 all : $(ALL)
 
-$(SERIAL): %: %.cpp
+% : %.cpp $(COMMON)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(PARALLEL): %: %.cpp
-	$(MPICXX) $(CXXFLAGS) -o $@ $<
+generate_test_input1: 
+	./knapsack_generator 1000 1000 1 5 1000
+generate_test_input2:
+	./knapsack_generator 10000 1000 1 5 1000
+generate_test_input3:
+	./knapsack_generator 100000 1000 1 5 1000
 
 .PHONY : clean
 
 clean :
 	rm -f *.o *.obj $(ALL)
+	rm -r input_files/input.in

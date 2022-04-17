@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
-
+#include "core/problemInput.h"
+#include "core/get_time.h"
+#include "core/types.h"
 #define DEFAULT_N          4
 #define DEFAULT_MAX_WEIGHT 60
 using namespace std;
@@ -12,7 +14,7 @@ using namespace std;
 /*
   Prints the indexes of items included in the dynamic table
  */
-void print_items(int n,vector<vector<int>> &dp ,vector <int> &s, vector <int> &v, int S)
+static void display_items(int n,vector<vector<long long>> &dp ,vector <long> &s, vector <long> &v, int S)
 {
     int result = dp[0][S];
     
@@ -25,7 +27,7 @@ void print_items(int n,vector<vector<int>> &dp ,vector <int> &s, vector <int> &v
            continue;
        }
        else {
-           cout<<i+1<<" ";
+           cout<<i+1<<", ";
            result-= v[i];
            S-=s[i];
        }
@@ -36,11 +38,13 @@ void print_items(int n,vector<vector<int>> &dp ,vector <int> &s, vector <int> &v
 /*
  * Solution is based on Dynamic Programming Paradigm
  */
-int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
+static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S) {
+    timer time;
+    double time_taken = 0.0;
     // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<int>> dp(n+1, vector<int>(S+1)); 
+    vector<vector<long long>> dp(n+1, vector<long long>(S+1)); 
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
-    
+    time.start();
     // top-down approach
     for(int i = n; i >= 0; i--) {
         for(int j = 0; j <= S; j++) {
@@ -62,54 +66,37 @@ int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
             }
         }
     }
-    print_items(n,dp,s,v,S);
+  
 
     int result = dp[0][S]; 
-    dp.~vector();   
-    return result;
+    display_items(n,dp,s,v,S);
+    time_taken = time.stop();
+    // dp.~vector();   
+    cout<<"Time taken (in seconds): " << time_taken << std::setprecision(TIME_PRECISION) << endl;
+    return dp[0][S];
 }
 
 int main(int argc, char **argv) {
-    if(argc!=2){
-        cout << "Please enter one input file!" << "\n";
-        return 0;
-    }
-
-    // cxxopts::Options options(
-    //   "page_rank_pull",
-    //   "Calculate page_rank using serial and parallel execution");
-    // options.add_options(
-    //   "",
-    //   {
-    //       {"nThreads", "Number of Threads",
-    //        cxxopts::value<uint>()->default_value(DEFAULT_NUMBER_OF_THREADS)},
-    //       {"nIterations", "Maximum number of iterations",
-    //        cxxopts::value<uint>()->default_value(DEFAULT_MAX_ITER)},
-    //       {"inputFile", "Input of values and weights",
-    //        cxxopts::value<std::string>()->default_value(
-    //            "/inputs/input.in")},
-    //   }
-    // );
-
-    // auto cl_options = options.parse(argc, argv);
-    // uint n_threads = cl_options["nThreads"].as<uint>();
-    // uint max_iterations = cl_options["nIterations"].as<uint>();
-    // std::string input_file_path = cl_options["inputFile"].as<string>();
-
+    
+    ProblemInput problemInstance; 
+    
     vector<int> weights, values;
-    int num_items, capacity;
-    capacity = DEFAULT_MAX_WEIGHT;
-    
-    
 
+    int capacity = problemInstance.ProblemInput_SetCapacity(400);
+
+    cout<<"cap"<<capacity<<endl;
     printf("Starting knapsack solving...\n"); 
-
-    int max_val = knapsack_serial(num_items, weights, values, capacity);
+    // for(int i=0; i < problemInstance.ProblemInput_GetNumItems(); i++)
+    // {
+    //     cout<<i<<": "<<"value: "<< problemInstance.values[i] << " weight: "<<problemInstance.weights[i] << endl;
+    // }
+    int max_val = knapsack_serial(  problemInstance.ProblemInput_GetNumItems(),
+                                    problemInstance.weights, 
+                                    problemInstance.values, 
+                                    capacity);
 
     cout << "Maximum value: " << max_val << endl;
-
-    weights.~vector();
-    values.~vector();
+    
 
     return 0;
 }

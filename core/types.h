@@ -13,6 +13,7 @@ typedef int64_t PageRankType;
 #define EPSILON 0.01
 #define DAMPING 0.85
 #define PAGE_RANK(x) (1 - DAMPING + DAMPING * x)
+#define TIME_PRECISION 5
 #define CHANGE_IN_PAGE_RANK(x, y) std::fabs(x - y)
 #define PAGERANK_MPI_TYPE MPI_FLOAT
 typedef float PageRankType;
