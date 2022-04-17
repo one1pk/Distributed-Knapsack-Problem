@@ -13,6 +13,8 @@ all : $(ALL)
 
 % : %.cpp $(COMMON)
 	$(CXX) $(CXXFLAGS) -o $@ $<
+generate_test_input0:
+	./knapsack_generator 10 1000 1 5 1000
 
 generate_test_input1: 
 	./knapsack_generator 1000 1000 1 5 1000

@@ -42,18 +42,26 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
     timer time;
     double time_taken = 0.0;
     // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<long long>> dp(n+1, vector<long long>(S+1)); 
+    vector<vector<long long>> dp(n+1, vector<long long>(S+1, 0));
+    // for (int i =0 ;i<=n;i++)
+    // {
+    //     for( int j=0; j<=S;j ++)
+    //     {
+    //         cout<<dp[i][j]<<", ";
+    //     }
+    //     cout<<endl;
+    // }
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     time.start();
     // top-down approach
     for(int i = n; i >= 0; i--) {
-        for(int j = 0; j <= S; j++) {
+        for(int j  = 0;j <= S; j++) {
             if(i==n) {
                 // no items to add when bag is full
                 dp[i][j] = 0; // initial condition
             }
             else {
-                int* choices = new int[2]; 
+                int* choices = new int[2] (); 
                 // 1st choice: Don't add item i to knapsack 
                 choices[0] = dp[i + 1][j]; // resuse optimal solution of i+1
                 if(j >= s[i]) {
@@ -66,12 +74,9 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
             }
         }
     }
-  
 
     int result = dp[0][S]; 
-    display_items(n,dp,s,v,S);
     time_taken = time.stop();
-    // dp.~vector();   
     cout<<"Time taken (in seconds): " << time_taken << std::setprecision(TIME_PRECISION) << endl;
     return dp[0][S];
 }
@@ -80,16 +85,12 @@ int main(int argc, char **argv) {
     
     ProblemInput problemInstance; 
     
-    vector<int> weights, values;
 
-    int capacity = problemInstance.ProblemInput_SetCapacity(400);
+    int capacity = problemInstance.ProblemInput_SetCapacity(5000);
 
-    cout<<"cap"<<capacity<<endl;
     printf("Starting knapsack solving...\n"); 
-    // for(int i=0; i < problemInstance.ProblemInput_GetNumItems(); i++)
-    // {
-    //     cout<<i<<": "<<"value: "<< problemInstance.values[i] << " weight: "<<problemInstance.weights[i] << endl;
-    // }
+    
+    
     int max_val = knapsack_serial(  problemInstance.ProblemInput_GetNumItems(),
                                     problemInstance.weights, 
                                     problemInstance.values, 

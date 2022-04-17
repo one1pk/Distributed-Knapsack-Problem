@@ -21,6 +21,7 @@ public:
             cout<<"ERROR OPENING INPUT FILE, terminating program ... "<<endl;
             exit(1); 
         }
+       
         infile.open(path);
         /*Read the number of items*/
         infile >> num_items;
