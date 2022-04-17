@@ -43,14 +43,7 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
     double time_taken = 0.0;
     // matrix of maximum values obtained after all intermediate combinations of items
     vector<vector<long long>> dp(n+1, vector<long long>(S+1, 0));
-    // for (int i =0 ;i<=n;i++)
-    // {
-    //     for( int j=0; j<=S;j ++)
-    //     {
-    //         cout<<dp[i][j]<<", ";
-    //     }
-    //     cout<<endl;
-    // }
+
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     time.start();
     // top-down approach
@@ -78,6 +71,8 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
     int result = dp[0][S]; 
     time_taken = time.stop();
     cout<<"Time taken (in seconds): " << time_taken << std::setprecision(TIME_PRECISION) << endl;
+    
+    display_items(n, dp, s, v, S);
     return dp[0][S];
 }
 
