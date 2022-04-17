@@ -98,7 +98,7 @@ int knapsack_parallel() {
     print_items(dp);
 
     int result = dp[0][S]; 
-    dp.~vector();   
+    // dp.~vector();   // this won't allow the return statement to execute
     return result;
 }
 
@@ -129,7 +129,8 @@ int main(int argc, char **argv) {
     // uint max_iterations = cl_options["nIterations"].as<uint>();
     // std::string input_file_path = cl_options["inputFile"].as<string>();
     s = {1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13,14,15,16,17,18,19,20,21,22};
-    v = {1,2,3,4,5,6,7,8,9,0,0,9,8,7,6,5,4,3,2,1,1,2};
+    v = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22};
+    // one possible solution is {19, 20, 21} -> Max val = 60
     
     n = s.size();
     S = 60;
