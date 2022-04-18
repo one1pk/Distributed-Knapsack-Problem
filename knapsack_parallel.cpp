@@ -40,17 +40,8 @@ static void display_items(int n,vector<vector<long long>> &dp ,vector <long> &s,
     cout<<" ]"<<endl;
 }
 
-/*
- * Solution is based on Dynamic Programming Paradigm
- */
-static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S) {
-    timer time;
-    double time_taken = 0.0;
-    // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<long long>> dp(n+1, vector<long long>(S+1, 0));
-    
-    time.start();
-    // top-down approach
+void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
+
     for(int i = n; i >= 0; i--) {
         for(int j  = 0;j <= S; j++) {
             if(i==n) {
@@ -60,7 +51,7 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
             else {
                 int* choices = new int[2] (); 
                 // 1st choice: Don't add item i to knapsack 
-                choices[0] = dp[i + 1][j]; // resuse optimal solution of i+1
+                choices[0] = dp[i + 1][j]; // reuse optimal solution of i+1
                 if(j >= s[i]) {
                     // 2nd choice: Add item i to knapsack
                     choices[1] = dp[i+1][j-s[i]]+v[i]; // add value of item i to optimal solution of i+1 that weighs at most j-s[i] 
@@ -121,7 +112,7 @@ int main(int argc, char **argv) {
     printf("Starting knapsack solving...\n"); 
     
     
-    int max_val = knapsack_serial(  problemInstance.ProblemInput_GetNumItems(),
+    int max_val = knapsack_parallel(  problemInstance.ProblemInput_GetNumItems(),
                                     problemInstance.weights, 
                                     problemInstance.values, 
                                     capacity);

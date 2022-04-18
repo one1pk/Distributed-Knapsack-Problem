@@ -255,7 +255,6 @@ int main(int argc, char *argv[])
     type = atoi(argv[3]);
     i = atoi(argv[4]);
     S = atoi(argv[5]);
-    printf("generator2 %d %d %d %d %d\n", n, r, type, i, S);
   } else {
     printf("generator2\n");
     printf("n = ");

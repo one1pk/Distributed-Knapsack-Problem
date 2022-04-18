@@ -2,6 +2,7 @@
 #define _PROBLEM_DESCR_
 #include <vector>
 #include <iostream>
+#include <fstream>
 #define INPUT_FILE_PATH "input_files/input.in"
 #define MAX_FILE_LENGTH 1024
 using namespace std;
