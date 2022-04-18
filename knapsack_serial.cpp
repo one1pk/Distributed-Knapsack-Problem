@@ -6,18 +6,18 @@
 #include <vector>
 #include "core/problemInput.h"
 #include "core/get_time.h"
-#include "core/types.h"
-#include "core/utils.h"
+#define DEFAULT_N          4
+#define DEFAULT_MAX_WEIGHT 60
 using namespace std;
 
 /*
   Prints the indexes of items included in the dynamic table
  */
-static void display_items(int n,vector<vector<long long>> &dp ,vector <long> &s, vector <long> &v, int S)
+static void display_items(int n,vector<vector<int>> &dp ,vector <int> &s, vector <int> &v, int S)
 {
     int result = dp[0][S];
     
-    cout<<"Items included (by index): [";
+    cout<<"Items included (by index): "<<endl;
     for(int i=0; i<n && result>0; i++)
     {
        // if result from dp[i+1][w] -> item is not included 
@@ -31,21 +31,22 @@ static void display_items(int n,vector<vector<long long>> &dp ,vector <long> &s,
            S-=s[i];
        }
     }
-    cout<<" ]"<<endl;
+    cout<<endl;
 }
 
 /*
  * Solution is based on Dynamic Programming Paradigm
  */
-static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S) {
+static int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
     timer time;
     double time_taken = 0.0;
     // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<long long>> dp(n+1, vector<long long>(S+1, 0));
+    vector<vector<int>> dp(n+1, vector<int>(S+1));
     
+    // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     time.start();
     // top-down approach
-    for(int i = n; i >= 0; i--) {
+    for(int i = n-1; i >= 0; i--) {
         for(int j  = 0;j <= S; j++) {
             if(i==n) {
                 // no items to add when bag is full
@@ -67,8 +68,11 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
     }
 
     time_taken = time.stop();
-    cout<<"Time taken (in seconds): " << time_taken << std::setprecision(TIME_PRECISION) << endl;
-    display_items (n, dp, s, v, S);
+    cout<<"Time taken (in seconds): " << time_taken << std::setprecision(5) << endl;
+    
+    display_items(n, dp, s, v, S);
+
+    int result = dp[0][S]; 
     return dp[0][S];
 }
 
@@ -77,7 +81,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
 
-    int capacity = problemInstance.ProblemInput_SetCapacity(5000);
+    int capacity = problemInstance.ProblemInput_SetCapacity(1000);
 
     printf("Starting knapsack solving...\n"); 
     
