@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
 
-    int capacity = problemInstance.ProblemInput_SetCapacity(5000);
+    int capacity = problemInstance.ProblemInput_SetCapacity(1500);
 
     printf("Starting knapsack solving...\n"); 
     

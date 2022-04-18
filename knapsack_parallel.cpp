@@ -17,7 +17,8 @@ int num_threads;
 
 CustomBarrier barrier(4);
 
-void print_dp(vector<vector<int>> dp){
+// for debugging only
+void print_dp(vector<vector<int>> &dp){
     for (const auto &row : dp)
     {
         for (const auto &s : row)
@@ -32,19 +33,20 @@ void print_dp(vector<vector<int>> dp){
 static void display_items(vector<vector<int>> &dp)
 {
     int result = dp[0][S];
-    
+    int j = S;
+
     cout<<"Items included (by index): "<<endl;
     for(int i=0; i<n && result>0; i++)
     {
        // if result from dp[i+1][w] -> item is not included 
        // or from v[i+1]+K[i+1][w-s[i-1]] -> if this then this item is included 
-       if(result == dp[i+1][S]){
+       if(result == dp[i+1][j]){
            continue;
        }
        else {
            cout<<i+1<<", ";
            result-= v[i];
-           S-=s[i];
+           j-=s[i];
        }
     }
     cout<<endl;
@@ -68,7 +70,6 @@ void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
                 }
                 // assuming no negative values
                 dp[i][j] = max(choices[0], choices[1]); 
-                // cout << start << ", end: " << end << ", rslt: " << dp[i][j] << endl;
                 // delete[] choices;
             }
         }
@@ -90,7 +91,6 @@ int knapsack_parallel() {
 
     // top-down approach
     
-    // cout << i << endl;
     int start,end = 0;
     for(int t = 0; t < num_threads; t++){
         start = end;
@@ -105,7 +105,7 @@ int knapsack_parallel() {
     for(int t = 0; t < num_threads; t++){
         threads[t].join();
     }
-
+    
     display_items(ref(dp));
 
     int result = dp[0][S]; 
@@ -121,13 +121,12 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
     num_threads = 4;
-    S = problemInstance.ProblemInput_SetCapacity(5000);
+    S = problemInstance.ProblemInput_SetCapacity(1500);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;
 
     printf("Starting knapsack solving...\n"); 
-    
     
     int max_val = knapsack_parallel();
 
