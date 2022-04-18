@@ -1,11 +1,9 @@
-#include <iostream>
-#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
-#include <thread>
-#include "core/utils.h"
+#include <mpi.h>
+//#include "core/utils.h"
 #include "core/problemInput.h"
 #include "core/get_time.h"
 
@@ -13,9 +11,7 @@ using namespace std;
 
 int n, S;
 vector<int> s, v;
-int num_threads;
-
-CustomBarrier barrier(4);
+int world_size;
 
 // for debugging only
 void print_dp(vector<vector<int>> &dp){
@@ -52,7 +48,8 @@ void display_items(vector<vector<int>> &dp)
     cout<<endl;
 }
 
-void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
+// TODO: implement send & receive
+void parallel_part(int p, vector<vector<int>>& dp, int start, int end) {
     for(int i = n; i >= 0; i--) {
         for(int j = start; j < end; j++) {
             if(i==n) {
@@ -80,7 +77,7 @@ void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
 /*
  * Solution is based on Dynamic Programming Paradigm
  */
-int knapsack_parallel() {
+int knapsack_parallel(int world_rank) {
     timer time;
     double time_taken = 0.0;
     
@@ -89,31 +86,30 @@ int knapsack_parallel() {
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     
     time.start();
-    int work = (S+1)/num_threads;
-    int rem_work = (S+1)%num_threads;
-    vector<thread> threads;
+    int work = (S+1)/world_size;
+    int rem_work = (S+1)%world_size;
 
     // top-down approach
     
     int start,end = 0;
-    for(int t = 0; t < num_threads; t++){
+    for(int p = 0; p < world_size; p++){
         start = end;
-        if(t<rem_work){
+        if(p<rem_work){
             end = start+work+1;
         }
         else{
             end = start+work;
         }
-        threads.push_back(thread(parallel_part, t, ref(dp), start, end));
+        parallel_part(ref(dp), start, end));
     }
-    for(int t = 0; t < num_threads; t++){
-        threads[t].join();
-    }
+
     
     time_taken = time.stop();
-    cout<<"Time taken (in seconds): " << time_taken << std::setprecision(5) << endl;
+    if(world_rank==0){
+        cout<<"Time taken (in seconds): " << time_taken << std::setprecision(5) << endl;
     
-    display_items(ref(dp));
+        display_items(ref(dp));
+    }
 
     int result = dp[0][S]; 
     return result;
@@ -133,11 +129,21 @@ int main(int argc, char **argv) {
     s = problemInstance.weights;
     v = problemInstance.values;
 
+    MPI_Init(NULL, NULL);
+
+    // Get the number of processes
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    // Get the rank of the process
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
     printf("Starting knapsack solving...\n"); 
     
-    int max_val = knapsack_parallel();
+    int max_val = knapsack_parallel(world_rank);
 
-    cout << "Maximum value: " << max_val << endl;
+    if(world_rank == 0)
+        cout << "Maximum value: " << max_val << endl;
 
+    MPI_Finalize();
     return 0;
 }
