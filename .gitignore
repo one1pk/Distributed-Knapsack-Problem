@@ -3,3 +3,4 @@ knapsack_parallel
 knapsack_serial
 knapsack_mpi
 .vscode
+input_files/input.in

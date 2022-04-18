@@ -9,8 +9,8 @@ class ProblemInput{
 private: 
     int num_items, capacity;
 public:
-    vector<long> values;
-    vector<long> weights;
+    vector<int> values;
+    vector<int> weights;
     ProblemInput(void)
     {
         char path[MAX_FILE_LENGTH];

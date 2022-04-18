@@ -7,12 +7,13 @@
 #include <thread>
 #include "core/utils.h"
 #include "core/problemInput.h"
+#include "core/get_time.h"
 #include "core/types.h"
 
 using namespace std;
 
 int n, S;
-vector<long> s, v;
+vector<int> s, v;
 int num_threads;
 
 CustomBarrier barrier(4);
@@ -30,7 +31,7 @@ void print_dp(vector<vector<int>> &dp){
 /*
   Prints the indexes of items included in the dynamic table
  */
-static void display_items(vector<vector<int>> &dp)
+void display_items(vector<vector<int>> &dp)
 {
     int result = dp[0][S];
     int j = S;
@@ -81,6 +82,9 @@ void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
  * Solution is based on Dynamic Programming Paradigm
  */
 int knapsack_parallel() {
+    timer time;
+    double time_taken = 0.0;
+    
     // matrix of maximum values obtained after all intermediate combinations of items
     vector<vector<int>> dp(n+1, vector<int>(S+1)); 
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
@@ -105,6 +109,9 @@ int knapsack_parallel() {
     for(int t = 0; t < num_threads; t++){
         threads[t].join();
     }
+    
+    time_taken = time.stop();
+    cout<<"Time taken (in seconds): " << time_taken << std::setprecision(TIME_PRECISION) << endl;
     
     display_items(ref(dp));
 
