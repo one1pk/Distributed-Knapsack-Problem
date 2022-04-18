@@ -43,11 +43,6 @@ public:
     {
         return this->num_items;
     }
-    // ~ProblemInput(void)
-    // {
-    //     weights.~vector();
-    //     values.~vector();
-    // }
-   
+
 };
 #endif

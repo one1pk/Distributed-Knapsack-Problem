@@ -4,10 +4,11 @@ MPICXX = mpic++
 CXXFLAGS = -std=c++14 -O3 -pthread
 
 COMMON= core/utils.h core/cxxopts.h core/get_time.h core/problemInput.h
-SERIAL= knapsack_serial
+SERIAL = knapsack_serial
+PARALLEL = knapsack_parallel
 PROBLEM_GENERATOR = knapsack_generator
 
-ALL= $(SERIAL) $(PROBLEM_GENERATOR)
+ALL= $(SERIAL) $(PARALLEL) $(PROBLEM_GENERATOR) 
 
 all : $(ALL)
 

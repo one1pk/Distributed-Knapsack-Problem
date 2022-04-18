@@ -3,13 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <thread>
 #include <vector>
 #include "core/problemInput.h"
 #include "core/get_time.h"
 #include "core/types.h"
 #include "core/utils.h"
-using namespace std;
 
+using namespace std;
+typedef struct worker
+{
+    uint thread_id;
+
+}worker;
 /*
   Prints the indexes of items included in the dynamic table
  */
@@ -71,13 +77,46 @@ static long long knapsack_serial(int n, vector<long> &s, vector<long> &v, int S)
     display_items (n, dp, s, v, S);
     return dp[0][S];
 }
+static void knapsack_parallel(worker* worker_thread)
+{
+    
+}
+
 
 int main(int argc, char **argv) {
     
+    // Initialize command line arguments
+  cxxopts::Options options("Parallel Knapsack solver");
+  options.add_options(
+      "custom",
+      {
+          {"capacity", "Maximum weight allowed in the knapsack",         
+           cxxopts::value<uint>()->default_value(DEFAULT_CAPACITY)},
+	        
+           {"nThreads", "Number of threads",
+           cxxopts::value<uint>()->default_value(DEFAULT_NUMBER_OF_WORKERS)}
+      });
+    auto cl_options = options.parse(argc, argv);
+
+    uint n_threads=cl_options["nThreads"].as<uint>();
+    uint capacity = cl_options["capacity"].as<uint>();
+    std::cout << "Capacity : " << capacity << "\n";;
+    std::cout <<"Number of threads : "<<n_threads<<"\n";
+
+    worker workers [n_threads];
+    std::thread threads[n_threads];
+    for(int i=0; i < n_threads; i++)
+    {
+        threads[i] = thread(knapsack_parallel, &workers[i]);
+    }
+    for(int i=0; i < n_threads; i++)
+    {
+        threads[i].join();
+    }
+
     ProblemInput problemInstance; 
     
 
-    int capacity = problemInstance.ProblemInput_SetCapacity(5000);
 
     printf("Starting knapsack solving...\n"); 
     
