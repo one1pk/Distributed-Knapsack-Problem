@@ -73,14 +73,14 @@ static int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
     display_items(n, dp, s, v, S);
 
     int result = dp[0][S]; 
-    for(int i=0;i<n+1;i++)
-    {
-        for(int j=0;j<S+1;j++)
-        {
-            cout<<dp[i][j]<<", ";
-        }
-        cout<<endl;
-    }
+    // for(int i=0;i<n+1;i++)
+    // {
+    //     for(int j=0;j<S+1;j++)
+    //     {
+    //         cout<<dp[i][j]<<", ";
+    //     }
+    //     cout<<endl;
+    // }
     return dp[0][S];
 }
 
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
 
-    int capacity = problemInstance.ProblemInput_SetCapacity(1000);
+    int capacity = problemInstance.ProblemInput_SetCapacity(400);
 
     printf("Starting knapsack solving...\n"); 
     

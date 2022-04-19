@@ -86,7 +86,6 @@ int knapsack_parallel() {
     
     // matrix of maximum values obtained after all intermediate combinations of items
     vector<vector<int>> dp(n+1, vector<int>(S+1)); 
-    // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     
     time.start();
     int work = (S+1)/num_threads;
@@ -128,7 +127,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
     num_threads = 4;
-    S = problemInstance.ProblemInput_SetCapacity(1000);
+    S = problemInstance.ProblemInput_SetCapacity(400);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;

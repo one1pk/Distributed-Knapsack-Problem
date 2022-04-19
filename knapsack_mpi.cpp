@@ -16,17 +16,10 @@ int *endx;;
 
 int world_size;
 int world_rank;
+int flag = -1;
 static int getRankFromWeight(uint weight)
 {
-    for(int i=0; i<world_size; i++)
-    {
-        // cout<<"start "<<startx[i]<<"end " << endx[i]<<endl;
-        if(weight>=startx[i] && weight<endx[i])
-        {
-            return i;
-        }
-    }
-    return -1;
+    return weight % world_size;
 }
 // for debugging only
 void print_dp(vector<vector<int>> &dp){
@@ -45,9 +38,7 @@ void display_items(vector<vector<int>> &dp)
 {
     int result = dp[0][S];
     int j = S;
-
     cout<<"Items included (by index): "<<endl;
-
     for(int i=0; i<n && result>0; i++)
     {
         /*
@@ -71,42 +62,61 @@ void parallel_part(int p, vector<vector<int>>& dp,int start, int end) {
    
     MPI_Request request;
     for(int i = n; i >= 0; i--) {
-        for(int j = start; j < end; j++) {
-
+        for(int j = world_rank; j < S+1; j += world_size) {
+            if(j == S)
+            {
+                // cout<<"process "<<world_rank<<"flag is "<<flag<<endl;
+                flag = world_rank;
+            }
             if(i == n) {
                 dp [i][j] = 0; //base case, no items to add
             }
+
             else {
                 vector<int> choices(2);
                 choices[0] = dp[i+1][j];
                 /*if the column is within my bounds*/
                 if(j >= s[i]) {
-                    if((j-s[i])>=start && (j-s[i]) < end)
-                    {
-                        choices[1] = dp[i+1][j-s[i]]+v[i];                    
-                    }
-                    else{
-                        cout<<"receiving from process"<<world_rank<<"\n";
-                        MPI_Recv (&choices[1], 1, MPI_INT, getRankFromWeight(j-s[i]), i+1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    /*don't receive from yourself*/
+                    // if((j-s[i])>=start && (j-s[i]) < end)
+                    // {
+                    //     choices[1] = dp[i+1][j-s[i]]+v[i];                    
+                    // }
+                    // else{
+                        // cout<<"receiving from process"<<world_rank<<"\n";
+                        // if(world_rank != 0){
+                        MPI_Recv (  &choices[1], 
+                                    1, 
+                                    MPI_INT, 
+                                    getRankFromWeight(j-s[i]), 
+                                    i+1, 
+                                    MPI_COMM_WORLD, 
+                                    MPI_STATUS_IGNORE);
                         choices[1] += v[i];
-                    }
+                        // }
+                    // }
                 }
                 dp[i][j] = max(choices[0], choices[1]); 
-        
+                
             }
-            for(int k = j+1; k < S+1; k++){
-
-                if(k == s[i-1] + j) {
-                    if(!(getRankFromWeight(k) == world_rank))
-                    {
-                        //cout<<"sending from "<< world_rank<< " value: "<<dp[i][j] <<" to process: "<< mapSizeToProcess[k]<<"\n";
-                        MPI_Isend(&dp[i][j], 1, MPI_INT, getRankFromWeight(k), i, MPI_COMM_WORLD, &request);
+          
+                for(int k = j+1; k < S+1; k++){
+                    if(k == s[i-1]+j){
+                    MPI_Isend(  &dp[i][j], 
+                                1, 
+                                MPI_INT, 
+                                getRankFromWeight(k),
+                                i,
+                                MPI_COMM_WORLD,
+                                &request
+                                );
                     }
                 }
             }
         }
 	}
-}
+
+
 /*
  * Solution is based on Dynamic Programming Paradigm
  */
@@ -139,37 +149,22 @@ int knapsack_parallel(int world_rank) {
         }
         curr_column = endx[i];
     } 
-    // for (int i=0; i < world_size; i++)
-    // {
-    //     for(int j = startx[i]; j < endx[i]; j++)
-    //     {
-    //         mapSizeToProcess[j] = i;
-    //     }
-    // }
-    // if(world_rank==1){
-    //     for(int i=0;i<columns;i++)
-    //     {
-    //         cout<<"i:"<<i<<" value="<<mapSizeToProcess[i]<<endl;
-    //     }
-    // }
 
     cout<<"Rank: "<< world_rank << "start:"<< startx[world_rank] << " end" << endx[world_rank]<<endl;
    
     parallel_part (world_rank, dp, startx[world_rank], endx[world_rank]);
     cout<<"Rank: "<< world_rank << "finished"<<endl;
 
-    
-    // if(world_rank == world_size-1)
-    // {
-    //    for(int i=0;i<n+1;i++)
-    //     {
-    //         for(int j=0;j<S+1;j++)
-    //         {
-    //             cout<<dp[i][j]<<", ";
-    //         }
-    //         cout<<endl;
-    //     }
-    // }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (world_rank == 0)
+    {
+        MPI_Receive
+    }
+    else
+    {
+
+    }
+
     int result = dp[0][S]; 
     delete[] startx;
     delete[] endx;
@@ -177,30 +172,27 @@ int knapsack_parallel(int world_rank) {
 }
 
 int main(int argc, char **argv) {
-    /* if(argc!=2){
-        cout << "Please enter one input file!" << "\n";
-        return 0;
-    } */
+   
 
+    
     ProblemInput problemInstance; 
-    S = problemInstance.ProblemInput_SetCapacity(1000);
+    S = problemInstance.ProblemInput_SetCapacity(400);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;
 
     MPI_Init(NULL, NULL);
-
     // Get the number of processes
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     // Get the rank of the process
    
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    printf("Starting knapsack solving...\n"); 
-    
+    if (world_rank == 0) {
+        printf("Starting knapsack solving...\n"); 
+    }
     int max_val = knapsack_parallel(world_rank);
     
-    if(world_rank == world_size-1){
+    if(world_rank == flag){
         cout << "Maximum value: " << max_val << endl;
     }
     MPI_Finalize();
