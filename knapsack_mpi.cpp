@@ -11,10 +11,23 @@ using namespace std;
 
 int n, S;
 vector<int> s, v;
-
+int *startx;
+int *endx;;
 
 int world_size;
 int world_rank;
+static int getRankFromWeight(uint weight)
+{
+    for(int i=0; i<world_size; i++)
+    {
+        // cout<<"start "<<startx[i]<<"end " << endx[i]<<endl;
+        if(weight>=startx[i] && weight<endx[i])
+        {
+            return i;
+        }
+    }
+    return -1;
+}
 // for debugging only
 void print_dp(vector<vector<int>> &dp){
     for (const auto &row : dp)
@@ -54,7 +67,7 @@ void display_items(vector<vector<int>> &dp)
 }
 
 // TODO: implement send & receive
-void parallel_part(int p, vector<vector<int>>& dp, vector<int> &mapSizeToProcess ,int start, int end) {
+void parallel_part(int p, vector<vector<int>>& dp,int start, int end) {
    
     MPI_Request request;
     for(int i = n; i >= 0; i--) {
@@ -73,8 +86,8 @@ void parallel_part(int p, vector<vector<int>>& dp, vector<int> &mapSizeToProcess
                         choices[1] = dp[i+1][j-s[i]]+v[i];                    
                     }
                     else{
-                       //out<<"receiving from process"<<world_rank<<" "<<"Weight of"<<j-s[i]<<"from process ="<<mapSizeToProcess[j-s[i]]<<"\n";
-                        MPI_Recv (&choices[1], 1, MPI_INT, mapSizeToProcess[j-s[i]], i+1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        cout<<"receiving from process"<<world_rank<<"\n";
+                        MPI_Recv (&choices[1], 1, MPI_INT, getRankFromWeight(j-s[i]), i+1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                         choices[1] += v[i];
                     }
                 }
@@ -84,10 +97,10 @@ void parallel_part(int p, vector<vector<int>>& dp, vector<int> &mapSizeToProcess
             for(int k = j+1; k < S+1; k++){
 
                 if(k == s[i-1] + j) {
-                    //cout<<"sending from "<< world_rank<< " value: "<<dp[i][j] <<" to process: "<< mapSizeToProcess[k]<<"\n";
-                    if(!(mapSizeToProcess[k] == world_rank))
+                    if(!(getRankFromWeight(k) == world_rank))
                     {
-                        MPI_Isend(&dp[i][j], 1, MPI_INT, mapSizeToProcess[k], i, MPI_COMM_WORLD, &request);
+                        //cout<<"sending from "<< world_rank<< " value: "<<dp[i][j] <<" to process: "<< mapSizeToProcess[k]<<"\n";
+                        MPI_Isend(&dp[i][j], 1, MPI_INT, getRankFromWeight(k), i, MPI_COMM_WORLD, &request);
                     }
                 }
             }
@@ -105,15 +118,16 @@ int knapsack_parallel(int world_rank) {
     // matrix of maximum values obtained after all intermediate combinations of items
     vector<vector<int>> dp(rows, vector<int>(columns)); 
     // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
-    vector<int> mapSizeToProcess(columns);
+    // vector<int> mapSizeToProcess(columns);
     time.start();
+    startx = new int [columns];
+    endx = new int [columns]; 
     int work = (S+1)/world_size;
     int rem_work = (S+1)%world_size;
-    std::vector<int> startx(world_size);
-    std::vector<int> endx(world_size);
+    
     uint min_columns_for_each_thread = columns /   world_size ;
     uint excess_columns = columns % world_size ;
-    uint curr_column = 0;
+    uint curr_column = 0; 
     for (uint i = 0; i < world_size; i++) {
         startx[i] = curr_column;
         if (excess_columns > 0) {
@@ -125,17 +139,24 @@ int knapsack_parallel(int world_rank) {
         }
         curr_column = endx[i];
     } 
-    for (int i=0; i < world_size; i++)
-    {
-        for(int j = startx[i]; j < endx[i]; j++)
-        {
-            mapSizeToProcess[j] = i;
-        }
-    }
-  
+    // for (int i=0; i < world_size; i++)
+    // {
+    //     for(int j = startx[i]; j < endx[i]; j++)
+    //     {
+    //         mapSizeToProcess[j] = i;
+    //     }
+    // }
+    // if(world_rank==1){
+    //     for(int i=0;i<columns;i++)
+    //     {
+    //         cout<<"i:"<<i<<" value="<<mapSizeToProcess[i]<<endl;
+    //     }
+    // }
+
     cout<<"Rank: "<< world_rank << "start:"<< startx[world_rank] << " end" << endx[world_rank]<<endl;
-    
-    parallel_part (world_rank, dp, mapSizeToProcess, startx[world_rank], endx[world_rank]);
+   
+    parallel_part (world_rank, dp, startx[world_rank], endx[world_rank]);
+    cout<<"Rank: "<< world_rank << "finished"<<endl;
 
     
     // if(world_rank == world_size-1)
@@ -150,6 +171,8 @@ int knapsack_parallel(int world_rank) {
     //     }
     // }
     int result = dp[0][S]; 
+    delete[] startx;
+    delete[] endx;
     return result;
 }
 
@@ -176,7 +199,7 @@ int main(int argc, char **argv) {
     printf("Starting knapsack solving...\n"); 
     
     int max_val = knapsack_parallel(world_rank);
-    MPI_Barrier(MPI_COMM_WORLD);
+    
     if(world_rank == world_size-1){
         cout << "Maximum value: " << max_val << endl;
     }
