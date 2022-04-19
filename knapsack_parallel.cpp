@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
     num_threads = 4;
-    S = problemInstance.ProblemInput_SetCapacity(1500);
+    S = problemInstance.ProblemInput_SetCapacity(1000);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;
