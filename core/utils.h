@@ -17,12 +17,12 @@
 #define uintE int32_t
 
 #define DEFAULT_NUMBER_OF_WORKERS "1"
+#define DEFAULT_CAPACITY        "400"
 #define DEFAULT_MAX_ITER "20"
 #define TIME_PRECISION 5
 #define VAL_PRECISION 14
 #define THREAD_LOGS 0
-#define DEFAULT_STRATEGY "1"
-#define DEFAULT_GRANULARITY "1"
+
 #define ADDITIONAL_TIMER_LOGS 1 
 
 struct CustomBarrier
