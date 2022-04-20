@@ -25,8 +25,8 @@ $(PARALLEL_MPI): %: %.cpp
 	$(MPICXX) $(CXXFLAGS) -o $@ $<
 
 generate_test_input0: 
-	@echo "Generating 10 items with uncorrelated weights and values..." 
-	./knapsack_generator 10 1000 1 5 1000
+	@echo "Generating 500 items with uncorrelated weights and values..." 
+	./knapsack_generator 500 1000 1 5 1000
 	@echo "finished generating input."
 generate_test_input1: 
 	@echo "Generating 1000 items with uncorrelated weights and values..." 
@@ -37,13 +37,10 @@ generate_test_input2:
 	./knapsack_generator 10000 1000 1 5 1000
 	@echo "finished generating input."
 generate_test_input3:
-	@echo "Generating 100000 items with uncorrelated weights and values..." 
-	./knapsack_generator 100000 1000 1 5 1000
+	@echo "Generating 50000 items with uncorrelated weights and values..." 
+	./knapsack_generator 50000 1000 1 5 1000
 	@echo "finished generating input."
-generate_test_input4:
-	@echo "Generating 1000000 items with uncorrelated weights and values..." 
-	./knapsack_generator 1000000 1000 1 5 1000
-	@echo "finished generating input."
+
 .PHONY : clean
 clean :
 	rm -f *.o *.obj $(ALL)
