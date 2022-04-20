@@ -35,6 +35,7 @@ public:
         }
         infile.close();
     }
+
     int ProblemInput_SetCapacity(uint capacity)
     {
         this->capacity = capacity;

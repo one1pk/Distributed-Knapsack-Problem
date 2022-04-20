@@ -3,175 +3,213 @@
 #include <string.h>
 #include <vector>
 #include <mpi.h>
-//#include "core/utils.h"
+#include "core/utils.h"
 #include "core/problemInput.h"
 #include "core/get_time.h"
-
+#define ROOT_RANK  0
 using namespace std;
 
 int n, S;
 vector<int> s, v;
 
-
 int world_size;
 int world_rank;
-// for debugging only
-void print_dp(vector<vector<int>> &dp){
-    for (const auto &row : dp)
-    {
-        for (const auto &s : row)
-            cout << s << ' ';
-        cout << endl;
-    }
+
+/*
+ *Maps a column of the table to the rank of the process that is working on that column
+ */
+static int getRankFromColumn(uint weight)
+{
+    return weight % world_size;
 }
 
 /*
-  Prints the indexes of items included in the dynamic table
+  Prints the indexes and values of items included in the dynamic table
  */
-void display_items(vector<vector<int>> &dp)
+void display_items(vector<vector<int>> &dynamic_tbl)
 {
-    int result = dp[0][S];
+    int result = dynamic_tbl[0][S];
     int j = S;
-
-    cout<<"Items included (by index): "<<endl;
-
-    for(int i=0; i<n && result>0; i++)
-    {
+    string indexes, values;
+    for(int i=0; i<n && result>0; i++) {
         /*
-         *if result from dp[i+1][w] -> item is not included 
-         *or from v[i+1]+K[i+1][w-s[i-1]] -> if this then this item is included 
-         */
-       if(result == dp[i+1][j]){
+        *if result from dynamic_tbl[i+1][w] -> item is not included 
+        *or from v[i+1]+K[i+1][w-s[i-1]] -> if this then this item is included 
+        */
+       if(result == dynamic_tbl[i+1][j]) {
            continue;
        }
        else {
-           cout<<i+1<<", ";
+           indexes +=  to_string(i+1) + ", ";
+           values += to_string(v[i+1]) + ", ";
            result-= v[i];
            j-=s[i];
        }
     }
-    cout<<endl;
+    cout << "Item Indexes: \n" << indexes << "\n Values: \n" << values;
 }
 
-// TODO: implement send & receive
-void parallel_part(int p, vector<vector<int>>& dp, vector<int> &mapSizeToProcess ,int start, int end) {
-   
+
+void fill_table(int p, vector<vector<int>>& dynamic_tbl, double * time) 
+{
+    timer timer;
+    timer.start(); 
     MPI_Request request;
-    //for each item in the knapsack
-    for(int i = n; i >= 0; i--) {
-        //for each allocated column
-        for(int j = start; j < end; j++) {
-
+    for(int i = n; i >= 0; i--) { 
+        for(int j = world_rank; j < S+1; j += world_size) {
+            
             if(i == n) {
-                dp [i][j] = 0; //base case, no items to add
-            }
-            else {
+                dynamic_tbl [i][j] = 0; //base case, no items to add
+            } else {
+               
                 vector<int> choices(2);
-                choices[0] = dp[i+1][j];
-                /*if the column is within my bounds*/
+                // 1st choice: Don't add item i to knapsack 
+                choices[0] = dynamic_tbl[i+1][j];
+                // 2nd choice: Add item i to knapsack
                 if(j >= s[i]) {
-                    if(((j-s[i])>=start) && ((j-s[i])<=end))
-                    {
-                        choices[1] = dp[i+1][j-s[i]]+v[i];          // add value of item i to optimal solution of i+1 that weighs at most j-s[i] 
-                    }
-                    else 
-                    {
-                        MPI_Recv (&choices[1], 1, MPI_INT, mapSizeToProcess[j-s[i]], i+1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        choices[1] += v[i];
-                    }
+                    
+                    MPI_Recv (  &choices[1], 
+                                1, 
+                                MPI_INT, 
+                                getRankFromColumn(j-s[i]), 
+                                i+1, 
+                                MPI_COMM_WORLD, 
+                                MPI_STATUS_IGNORE);
+                    choices[1] += v[i];     
                 }
-                dp[i][j] = max(choices[0], choices[1]); 
-
+                /*compare available choices*/
+                dynamic_tbl[i][j] = max(choices[0], choices[1]); 
             }
-
-            for (int k = j+1; k < S; k++) 
-            {
-                if (k-j == s[i-1]) {
-                    MPI_Isend(&dp[i][j], 1, MPI_INT, mapSizeToProcess[k], i, MPI_COMM_WORLD, &request);
-                }
-            }
-        }
-    }
+            /*send the result to processes that is waiting on the (j+s[i-1]) item*/
+            if( (j+s[i-1]) <= S) {
+            MPI_Isend(  &dynamic_tbl[i][j], 
+                        1, 
+                        MPI_INT, 
+                        getRankFromColumn(j+s[i-1]),
+                        i,
+                        MPI_COMM_WORLD,
+                        &request
+                        );
+            }     
+        }   
+    }    
+    *time = timer.stop();
 }
+
+
 /*
  * Solution is based on Dynamic Programming Paradigm
  */
 int knapsack_parallel(int world_rank) {
-    timer time;
-    double time_taken = 0.0;
+    
+    timer global_timer;
+    double global_time_taken = 0.0;
+    double local_time_taken = 0.0;
+    if (world_rank == ROOT_RANK) {
+        global_timer.start();
+    }
     uint rows = n+1;
     uint columns = S+1;
     // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<int>> dp(rows, vector<int>(columns)); 
-    // dp[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
-    vector<int> mapSizeToProcess(columns);
-    time.start();
-    int work = (S+1)/world_size;
-    int rem_work = (S+1)%world_size;
+    vector<vector<int>> dynamic_tbl(rows, vector<int>(columns)); 
+    // dynamic_tbl[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
+   
+    fill_table (world_rank, dynamic_tbl, &local_time_taken);
+    printf("%d, %g\n", world_rank, local_time_taken);
 
-
-    std::vector<int> startx(world_size);
-    std::vector<int> endx(world_size);
-    uint min_columns_for_each_thread = columns /   world_size ;
-    uint excess_columns = columns % world_size ;
-    uint curr_column = 0;
-    for (uint i = 0; i < world_size; i++) {
-        startx[i] = curr_column;
-        if (excess_columns > 0) {
-            endx[i] = curr_column + min_columns_for_each_thread +1 ;
-            excess_columns--;
-        } 
-        else {
-            endx[i] = curr_column + min_columns_for_each_thread ;
+    //collecting results from all processes
+    MPI_Request request;
+    int * temp = (int*) malloc (sizeof(int) * rows);
+    if(world_rank != ROOT_RANK){
+        for(int j = world_rank; j<columns; j+=world_size) {
+            // send results to root rank, one column at a time
+            for(int i=0; i < rows; i++) {
+                    temp[i] = dynamic_tbl[i][j];
+            }
+            if(world_rank != ROOT_RANK) {
+                
+                MPI_Send(  temp, 
+                            rows, 
+                            MPI_INT, 
+                            ROOT_RANK,
+                            j,
+                            MPI_COMM_WORLD
+                            );
+            }
         }
-        curr_column = endx[i];
-    } 
-    for (int i=0; i < world_size; i++)
-    {
-        for(int j = startx[i]; j < endx[i]; j++)
-        {
-            mapSizeToProcess[j] = i;
+    }else{
+        
+        for(int j = 0; j<columns; j++){
+            // receive filled columns at root rank
+            if(getRankFromColumn(j) != ROOT_RANK) {
+                MPI_Recv(   temp,
+                            rows,
+                            MPI_INT,
+                            getRankFromColumn(j),
+                            j,
+                            MPI_COMM_WORLD,
+                            MPI_STATUS_IGNORE
+                            );
+                for(int i=0; i<rows; i++)
+                {
+                    dynamic_tbl[i][j] = temp[i];
+                }
+            }
+            
         }
     }
-  
-    // cout<<"Rank: "<< world_rank << "start:"<< startx[world_rank] << " end" << endx[world_rank]<<endl;
+    free(temp);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if(world_rank == ROOT_RANK) {
+        global_time_taken = global_timer.stop();
+        cout << "Total time taken (in seconds) : " << std::setprecision(5)<< global_time_taken << "\n";
+        display_items(dynamic_tbl);
+    }
     
-    parallel_part (world_rank, dp, mapSizeToProcess, startx[world_rank], endx[world_rank]);
-
-
-    
-
-    int result = dp[0][S]; 
-    return -1;
+    int result = dynamic_tbl[0][S]; 
+    return result;
 }
 
 int main(int argc, char **argv) {
-    /* if(argc!=2){
-        cout << "Please enter one input file!" << "\n";
-        return 0;
-    } */
+   
+    cxxopts::Options options(
+      "0-1 Knapsack MPI solver",
+      "Maximize profit from given items' weights and values with bounded capacity");
+    options.add_options(
+        "",
+        {
+            {"capacity", "Maximum allowed capacity",
+            cxxopts::value<uint>()->default_value(DEFAULT_CAPACITY)}
+            
+        }
+    );
+    auto cl_options = options.parse(argc, argv);
+    uint capacity = cl_options["capacity"].as<uint>(); 
 
     ProblemInput problemInstance; 
-    S = problemInstance.ProblemInput_SetCapacity(1500);
+    S = problemInstance.ProblemInput_SetCapacity(capacity);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;
-
+    
     MPI_Init(NULL, NULL);
-
     // Get the number of processes
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    // Get the rank of the process
-   
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    printf("Starting knapsack solving...\n"); 
     
+    // Get the rank of the process
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    if (world_rank == ROOT_RANK) {
+        cout << "Starting knapsack solving..."<<"\n"; 
+        cout << "Number of processes : " << world_size << "\n";
+        cout << "Number of items : "<< n <<"\n";
+        cout << "Capacity : "<< capacity <<"\n";
+        cout << "rank, time_taken\n";
+    }
     int max_val = knapsack_parallel(world_rank);
-
-    if(world_rank == 0)
-        cout << "Maximum value: " << max_val << endl;
-
+    if(world_rank == ROOT_RANK){
+        cout << "\nMaximum value: " << max_val << endl;
+    }
     MPI_Finalize();
     
     return 0;
