@@ -12,7 +12,7 @@ using namespace std;
 /*
   Prints the indexes and values of items included in the dynamic table
  */
-static void display_items(int n,vector<vector<int>> &dynamic_tblnamic_tbl ,vector <int> &s, vector <int> &v, int S)
+static void display_items(int n,vector<vector<int>> &dynamic_tbl ,vector <int> &s, vector <int> &v, int S)
 {
     int result = dynamic_tbl[0][S];
     int j = S;
@@ -41,8 +41,8 @@ static int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
     timer time;
     double time_taken = 0.0;
     // matrix of maximum values obtained after all intermediate combinations of items
-    vector<vector<int>> dynamic_tblnamic_tbl(n+1, vector<in
-    // dynamic_tblnamic_tbl[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
+    vector<vector<int>> dynamic_tbl(n+1, vector<int>(S+1));
+    // dynamic_tbl[i][j] is the maximum value that can be obtained by using a subset of the items (i...n−1) (last n−i items) which weighs at most j pounds
     
     time.start();
     // begin from base case i==n, when bag is full
@@ -50,19 +50,19 @@ static int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
         for(int j  = 0;j <= S; j++) {
             if(i==n) {
                 // no items to add when bag is full
-                dynamic_tblnamic_tbl[i]// initial conditioncondition
+                dynamic_tbl[i][j] = 0; // initial condition
             }
             else {
                 vector<int> choices(2);
 
                 // 1st choice: Don't add item i to knapsack 
-                choices[0] = dynamic_tblnamic_tbl[i + 1][]; // resuse optimal solution of i+1
+                choices[0] = dynamic_tbl[i + 1][j]; // reuse optimal solution of i+1
                 if(j >= s[i]) {
                     // 2nd choice: Add item i to knapsack
-                    choices[1] = dynamic_tblnamic_tbl[i+1][j-s[i]]+v[i]; // add value of item i to optimal solution of i+1 that weighs at most j-s[i] 
+                    choices[1] = dynamic_tbl[i+1][j-s[i]]+v[i]; // add value of item i to optimal solution of i+1 that weighs at most j-s[i] 
                 }
                 // choose maximum profit out of both choices
-                dynamic_tblnamic_tbl[i][j] = max(choices[0], choi
+                dynamic_tbl[i][j] = max(choices[0], choices[1]); 
             }
         }
     }
@@ -70,11 +70,11 @@ static int knapsack_serial(int n, vector<int> &s, vector<int> &v, int S) {
     time_taken = time.stop();
     cout<<"Time taken (in seconds): " << time_taken << std::setprecision(5) << endl;
     
-    display_items(n, dynamic_tblnamic_tbl, s, v, S);
+    display_items(n, dynamic_tbl, s, v, S);
 
     // max value returned for the case where bag is empty (i=0) and max weight is the capacity of the bag (j=S)
-    int result = dynamic_tblnamic_tb
-    return dynamic_tblnamic_tbl[0][S];
+    int result = dynamic_tbl[0][S]; 
+    return dynamic_tbl[0][S];
 }
 
 int main(int argc, char **argv) {
