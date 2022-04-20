@@ -12,12 +12,9 @@ using namespace std;
 
 int n, S;
 vector<int> s, v;
-int *startx;
-int *endx;;
 
 int world_size;
 int world_rank;
-
 
 /*
  *Maps the weight of an item to the processes' ranks that is working on that column
@@ -26,19 +23,6 @@ static int getRankFromColumn(uint weight)
 {
     return weight % world_size;
 }
-// for debugging only
-// void print_dp(vector<vector<int>> &dynamicTbl){
-//     string indexes, values;
-//     for (const auto &row : dynamicTbl)
-//     {
-//         for (const auto &s : row)
-//             indexes +=  s + ' ';
-//             values += v[row] + ' ';
-//         indexes += '\n';
-//         values += '\n';
-//     }
-//     cout << "Item Indexes: \n" << indexes << "Values: \n" << values;
-// }
 
 /*
   Prints the indexes of items included in the dynamic table
@@ -47,7 +31,7 @@ void display_items(vector<vector<int>> &dynamicTbl)
 {
     int result = dynamicTbl[0][S];
     int j = S;
-    cout<<"Items included (by index): "<<endl;
+    string indexes, values;
     for(int i=0; i<n && result>0; i++)
     {
         /*
@@ -58,12 +42,16 @@ void display_items(vector<vector<int>> &dynamicTbl)
            continue;
        }
        else {
-           cout<<i+1<<", ";
+           indexes +=  to_string(i+1) + ", ";
+           values += to_string(v[i+1]) + ", ";
+           //cout<<i+1<<", ";
            result-= v[i];
            j-=s[i];
        }
+       //indexes += '\n';
+        //values += '\n';
     }
-    cout<<endl;
+    cout << "Item Indexes: \n" << indexes << "\n Values: \n" << values;
 }
 
 
@@ -136,40 +124,47 @@ int knapsack_parallel(int world_rank) {
 
     //collecting results from all processes
     MPI_Request request;
-    //for(int i = n; i< rows; i--) {
+    int * temp = (int*) malloc (sizeof(int) * rows);
+    if(world_rank != ROOT_RANK){
         for(int j = world_rank; j<columns; j+=world_size) {
             // send results to root rank
+            for(int i=0; i < rows; i++) {
+                    temp[i] = dynamicTbl[i][j];
+            }
             if(world_rank != ROOT_RANK) {
-               
-                MPI_Isend(  &dynamicTbl[][j], 
+                
+                MPI_Send(  temp, 
                             rows, 
                             MPI_INT, 
                             ROOT_RANK,
                             j,
-                            MPI_COMM_WORLD,
-                            &request
-                         );
-            }
-            // receive at root rank
-            else {
-                if(getRankFromColumn(j) != ROOT_RANK) {
-                    cout<< "receiving"<<endl;
-                    MPI_Irecv( &dynamicTbl[i][j],
-                                1,
-                                MPI_INT,
-                                getRankFromColumn(j),
-                                j,
-                                MPI_COMM_WORLD,
-                                &request
-                                );
-                }
+                            MPI_COMM_WORLD
+                            // &request
+                            );
             }
         }
-        MPI_Barrier(MPI_COMM_WORLD);
-    //}
+    }else{
         
-                   
-    //cout<<"Rank: "<< world_rank << "finished"<<endl;
+        for(int j = 0; j<columns; j++){
+            // receive at root rank
+            if(getRankFromColumn(j) != ROOT_RANK) {
+                MPI_Recv(   temp,
+                            rows,
+                            MPI_INT,
+                            getRankFromColumn(j),
+                            j,
+                            MPI_COMM_WORLD,
+                            MPI_STATUS_IGNORE
+                            );
+                for(int i=0; i<rows; i++)
+                {
+                    dynamicTbl[i][j] = temp[i];
+                }
+            }
+            
+        }
+    }
+    free(temp);
 
     MPI_Barrier(MPI_COMM_WORLD);
     if(world_rank == ROOT_RANK) {
@@ -177,9 +172,17 @@ int knapsack_parallel(int world_rank) {
         cout << "Total time taken (in seconds) : " << std::setprecision(TIME_PRECISION)<< global_time_taken << "\n";
         display_items(dynamicTbl);
     }
-    
-
-
+    // if (world_rank == ROOT_RANK)
+    // {
+    //     for(int i=0;i<rows;i++)
+    //     {
+    //         for(int j= 0; j<columns;j++)
+    //         {
+    //             cout<<dynamicTbl[i][j]<<", ";
+    //         }
+    //     }
+    //     printf("\n");
+    // }
     int result = dynamicTbl[0][S]; 
     return result;
 }
@@ -220,7 +223,7 @@ int main(int argc, char **argv) {
     }
     int max_val = knapsack_parallel(world_rank);
     if(world_rank == ROOT_RANK){
-        cout << "Maximum value: " << max_val << endl;
+        cout << "\nMaximum value: " << max_val << endl;
     }
     MPI_Finalize();
     

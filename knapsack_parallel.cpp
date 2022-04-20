@@ -34,8 +34,9 @@ void display_items(vector<vector<int>> &dp)
 {
     int result = dp[0][S];
     int j = S;
+    string indexes, values;
 
-    cout<<"Items included (by index): "<<endl;
+    // cout<<"Items included (by index): "<<endl;
     for(int i=0; i<n && result>0; i++)
     {
        // if result from dp[i+1][w] -> item is not included 
@@ -44,12 +45,15 @@ void display_items(vector<vector<int>> &dp)
            continue;
        }
        else {
-           cout<<i+1<<", ";
+           indexes +=  to_string(i+1) + ", ";
+           values += to_string(v[i+1]) + ", ";
+           // cout<<i+1<<", ";
            result-= v[i];
            j-=s[i];
        }
     }
-    cout<<endl;
+    cout << "Item Indexes: \n" << indexes << "\nValues: \n" << values;
+
 }
 
 void parallel_part(int t, vector<vector<int>>& dp, int start, int end) {
@@ -108,7 +112,7 @@ int knapsack_parallel() {
     for(int t = 0; t < num_threads; t++){
         threads[t].join();
     }
-    
+    // print_dp(dp);
     time_taken = time.stop();
     cout<<"Time taken (in seconds): " << time_taken << std::setprecision(5) << endl;
     
@@ -127,7 +131,7 @@ int main(int argc, char **argv) {
     ProblemInput problemInstance; 
     
     num_threads = 4;
-    S = problemInstance.ProblemInput_SetCapacity(400);
+    S = problemInstance.ProblemInput_SetCapacity(1000);
     n = problemInstance.ProblemInput_GetNumItems();
     s = problemInstance.weights;
     v = problemInstance.values;
@@ -136,7 +140,7 @@ int main(int argc, char **argv) {
     
     int max_val = knapsack_parallel();
 
-    cout << "Maximum value: " << max_val << endl;
+    cout << "\nMaximum value: " << max_val << endl;
 
     return 0;
 }
